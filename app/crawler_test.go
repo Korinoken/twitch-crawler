@@ -2,8 +2,6 @@ package service
 
 import (
 	"testing"
-	//"fmt"
-	//"github.com/Pallinder/go-randomdata"
 	"github.com/stretchr/testify/suite"
 	"log"
 	"net/http/httptest"
@@ -34,15 +32,18 @@ func (suite *CrawlerTestSuite) SetupSuite() {
 
 var (
 	testImages = []string{
-		"image1.gif",
-		"image2.gif",
+		"image1.png",
+		"image2.png",
 	}
 )
 
 func (suite *CrawlerTestSuite) TestDownloadImageFromUrl() {
+	fileEndLocation := suite.testDataLocation+`\download`
 	for _, testImage := range testImages {
-		err := downloadImageFromUrl(suite.server.URL + testImage,testImage,
-			suite.testDataLocation)
+		err := downloadImageFromUrl(suite.server.URL+"?file="+testImage, testImage,
+			fileEndLocation)
+		suite.Assert().Nil(err)
+		_, err = os.Stat(fileEndLocation);
 		suite.Assert().Nil(err)
 	}
 	suite.Assert().True(true, true, "z")
@@ -66,7 +67,8 @@ func (suite *CrawlerTestSuite) handleClient(writer http.ResponseWriter, request 
 	fmt.Println("Client requests: " + Filename)
 
 	//Check if file exists and open
-	Openfile, err := os.Open(suite.testDataLocation + Filename)
+	log.Printf("Attempting to get file %v",suite.testDataLocation + `\`+ Filename)
+	Openfile, err := os.Open(suite.testDataLocation + `\` + Filename)
 	defer Openfile.Close() //Close after function return
 	if err != nil {
 		//File not found, send 404
