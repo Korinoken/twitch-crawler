@@ -1,21 +1,20 @@
-package service
+package main
 
 import (
-	"testing"
 	"github.com/stretchr/testify/suite"
 	"log"
 	"net/http/httptest"
-	//"net/http"
-	//"net/http/httptest"
+	"testing"
+	"net/http"
 	"fmt"
 	"io"
-	"net/http"
 	"os"
 	"strconv"
 )
 
 type CrawlerTestSuite struct {
 	suite.Suite
+	crawler                       TwitchCrawler
 	server                        httptest.Server
 	VariableThatShouldStartAtFive int
 	testDataLocation              string
@@ -28,6 +27,7 @@ func (suite *CrawlerTestSuite) SetupSuite() {
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			suite.handleClient(w, r)
 		}))
+	suite.crawler = TwitchCrawler{"key",suite.server.URL}//test config
 }
 
 var (
@@ -38,17 +38,20 @@ var (
 )
 
 func (suite *CrawlerTestSuite) TestDownloadImageFromUrl() {
-	fileEndLocation := suite.testDataLocation+`\download`
+	fileEndLocation := suite.testDataLocation + `\download`
 	for _, testImage := range testImages {
-		err := downloadImageFromUrl(suite.server.URL+"?file="+testImage, testImage,
+		err := suite.crawler.downloadImageFromUrl(suite.server.URL+"?file="+testImage, testImage,
 			fileEndLocation)
 		suite.Assert().Nil(err)
-		_, err = os.Stat(fileEndLocation);
+		_, err = os.Stat(fileEndLocation + `\` + testImage)//check that file exists
 		suite.Assert().Nil(err)
 	}
-	suite.Assert().True(true, true, "z")
 }
-
+func (suite *CrawlerTestSuite) TestGetImageList() {
+	res, err := suite.crawler.getImageList()
+	suite.Assert().NotEmpty(res)
+	suite.Assert().Nil(err)
+}
 func TestModelTestSuite(t *testing.T) {
 	suite.Run(t, new(CrawlerTestSuite))
 }
@@ -56,6 +59,7 @@ func (suite *CrawlerTestSuite) TearDownSuite() {
 	log.Print("Closing test server")
 	//suite.server.Close()
 }
+
 func (suite *CrawlerTestSuite) handleClient(writer http.ResponseWriter, request *http.Request) {
 	//First of check if Get is set in the URL
 	Filename := request.URL.Query().Get("file")
@@ -67,7 +71,7 @@ func (suite *CrawlerTestSuite) handleClient(writer http.ResponseWriter, request 
 	fmt.Println("Client requests: " + Filename)
 
 	//Check if file exists and open
-	log.Printf("Attempting to get file %v",suite.testDataLocation + `\`+ Filename)
+	log.Printf("Attempting to get file %v", suite.testDataLocation+`\`+Filename)
 	Openfile, err := os.Open(suite.testDataLocation + `\` + Filename)
 	defer Openfile.Close() //Close after function return
 	if err != nil {
