@@ -1,0 +1,44 @@
+{
+	"emoticons" : [{
+			"regex" : "ydmSatti",
+			"images" : [{
+					"emoticon_set" : 13794,
+					"height" : 28,
+					"width" : 28,
+					"url" : "https://static-cdn.jtvnw.net/jtv_user_pictures/emoticon-69119-src-0d4b23ce12767ed8-28x28.png"
+				}
+			]
+		}, {
+			"regex" : "cmvChanManV",
+			"images" : [{
+					"emoticon_set" : 73,
+					"height" : 30,
+					"width" : 23,
+					"url" : "https://static-cdn.jtvnw.net/jtv_user_pictures/chansub-global-emoticon-000c3b4a9a1df310-23x30.png"
+				}
+			]
+		}, {
+			"regex" : "deanaS",
+			"images" : [{
+					"emoticon_set" : 10590,
+					"height" : 28,
+					"width" : 28,
+					"url" : "https://static-cdn.jtvnw.net/jtv_user_pictures/emoticon-56536-src-a6df41b7542f81f6-28x28.png"
+				}
+			]
+		},
+		{
+			"regex" : "deanaS2",
+			"images" : [{
+					"emoticon_set" : 10590,
+					"height" : 28,
+					"width" : 28,
+					"url" : "https://static-cdn.jtvnw.net/jtv_user_pictures/emoticon-56536-src-a6df41b7542f81f6-28x29.png"
+				}
+			]
+		}
+	],
+	"_links" : {
+		"self" : "http://api.twitch.tv/kraken/chat/emoticons"
+	}
+}
