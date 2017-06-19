@@ -33,6 +33,7 @@ func (suite *CrawlerTestSuite) SetupSuite() {
 		ChannelsToProcess: map[int]string{10590: "deana"},
 		WorkFolder:        "C:/test/images",
 		CacheFileName:     "twitchApiResponse.json"} //test config
+	os.MkdirAll(filepath.FromSlash(suite.crawler.WorkFolder),0777)
 }
 
 var (
@@ -48,11 +49,12 @@ func (suite *CrawlerTestSuite) TestDownloadImageFromUrl() {
 	for _, testImage := range testImages {
 		suite.crawler.DownloadImageFromUrl(app.DownloadImageData{suite.server.URL + "?file=" + testImage, testImage,
 			fileEndLocation}, ch)
-		//err :=  <- ch
-		//suite.Assert().Nil(err)
-		err := os.Remove(filepath.FromSlash(fileEndLocation +
+		err := <-ch
+		suite.Assert().Nil(err)
+		err = os.Remove(filepath.FromSlash(fileEndLocation +
 			"/" +
 			testImage))
+
 		suite.Assert().Nil(err)
 	}
 }
