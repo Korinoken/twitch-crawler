@@ -1,6 +1,7 @@
 {
 	"ApiKey" : "YourKey",
 	"ApiLink" : "https://api.twitch.tv/kraken",
-	"ChannelsToProcess" : [10590,"deana"],
-	"WorkFolder" : "c:/twitch/images"
+	"ChannelsToProcess" : {"10590":"deana"},
+	"WorkFolder" : "c:/twitch/images",
+	"CacheFileName": "twitchApiResponse.json"
 }

@@ -54,7 +54,6 @@ func (suite *CrawlerTestSuite) TestDownloadImageFromUrl() {
 		err = os.Remove(filepath.FromSlash(fileEndLocation +
 			"/" +
 			testImage))
-
 		suite.Assert().Nil(err)
 	}
 }
