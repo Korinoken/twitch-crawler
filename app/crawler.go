@@ -23,7 +23,7 @@ type doneFunc func()
 
 func (crawler *TwitchCrawler) spawnWorkers(limit uint, proc doneFunc) (chan<- DownloadImageData, chan error) {
 	c := make(chan DownloadImageData)
-	res := make(chan error)
+	res := make(chan error, 50)
 
 	for i := uint(0); i < limit; i++ {
 		go func() {
@@ -127,15 +127,19 @@ func (crawler *TwitchCrawler) GetImageList() (images map[string][]TwitchImageMet
 	json.Unmarshal(bodyBytes, &f)
 	//NA marshaling
 	for _, imageMeta := range f["emoticons"] {
+
+		log.Printf("Parsing meta:%v", imageMeta)
 		converted := imageMeta.(map[string]interface{})
 		meta := TwitchImageMeta{}
 		meta.Regex = converted["regex"].(string)
 		f4 := converted["images"].([]interface{})
 		meta.Images = f4[0].(map[string]interface{})
-		name, ok := crawler.ChannelsToProcess[int(meta.Images["emoticon_set"].(float64))]
-		if ok {
-			images[name] = append(images[name], meta)
-		}
+		if meta.Images["emoticon_set"] != nil {
+			name, ok := crawler.ChannelsToProcess[int(meta.Images["emoticon_set"].(float64))]
+			if ok {
+				images[name] = append(images[name], meta)
+			}
+		} //TODO: processing of no channel images
 	}
 	return images, err
 }

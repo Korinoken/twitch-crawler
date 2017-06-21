@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"github.com/urfave/cli"
 	"io/ioutil"
-	cr "twitch-crawler/app"
 	"log"
 	"os"
+	cr "twitch-crawler/app"
 )
 
 func main() {
@@ -26,13 +26,13 @@ func main() {
 				}
 				crawler := cr.TwitchCrawler{}
 				json.Unmarshal(data, &crawler)
-				log.Printf("crawler: %v", crawler)
-				list, err :=  crawler.GetImageList()
+				log.Printf("Loaded config: %v", crawler)
+				list, err := crawler.GetImageList()
 				if err != nil {
 					log.Fatal(err)
 					return err
 				}
-				err =  crawler.SaveImages(list)
+				err = crawler.SaveImages(list)
 				if err != nil {
 					log.Fatal(err)
 					return err

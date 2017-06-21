@@ -33,7 +33,7 @@ func (suite *CrawlerTestSuite) SetupSuite() {
 		ChannelsToProcess: map[int]string{10590: "deana"},
 		WorkFolder:        "C:/test/images",
 		CacheFileName:     "twitchApiResponse.json"} //test config
-	os.MkdirAll(filepath.FromSlash(suite.crawler.WorkFolder),0777)
+	os.MkdirAll(filepath.FromSlash(suite.crawler.WorkFolder), 0777)
 }
 
 var (
