@@ -90,6 +90,8 @@ func (crawler *TwitchCrawler) SaveImages(imageList map[string][]TwitchImageMeta)
 		err := <-res
 		if err != nil {
 			log.Printf("Err from channel:%v", err)
+			close(c)
+			close(res)
 			return err
 		}
 	}
