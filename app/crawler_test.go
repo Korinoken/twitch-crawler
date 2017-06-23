@@ -45,11 +45,10 @@ var (
 
 func (suite *CrawlerTestSuite) TestDownloadImageFromUrl() {
 	fileEndLocation := filepath.FromSlash(suite.crawler.WorkFolder)
-	ch := make(chan error, 2)
 	for _, testImage := range testImages {
-		suite.crawler.DownloadImageFromUrl(app.DownloadImageData{suite.server.URL + "?file=" + testImage, testImage,
-			fileEndLocation}, ch)
-		err := <-ch
+		err := suite.crawler.DownloadImageFromUrl(app.DownloadImageData{suite.server.URL + "?file=" + testImage,
+			testImage,
+			fileEndLocation})
 		suite.Assert().Nil(err)
 		err = os.Remove(filepath.FromSlash(fileEndLocation +
 			"/" +

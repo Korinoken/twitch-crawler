@@ -11,6 +11,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -23,7 +24,7 @@ type doneFunc func()
 
 func (crawler *TwitchCrawler) spawnWorkers(limit uint, proc doneFunc) (chan<- DownloadImageData, chan error) {
 	c := make(chan DownloadImageData)
-	res := make(chan error, 50)
+	res := make(chan error, limit)
 
 	for i := uint(0); i < limit; i++ {
 		go func() {
@@ -31,28 +32,42 @@ func (crawler *TwitchCrawler) spawnWorkers(limit uint, proc doneFunc) (chan<- Do
 				a, ok := <-c
 				if !ok {
 					proc()
+					res <- nil
 					return
 				}
-				crawler.DownloadImageFromUrl(a, res)
+				err := crawler.DownloadImageFromUrl(a)
+				if err != nil {
+					res <- err
+					close(c)
+				}
 			}
 		}()
 	}
 	return c, res
 }
-func (crawler *TwitchCrawler) SaveImages(imageList map[string][]TwitchImageMeta) error {
+func (crawler *TwitchCrawler) SaveImages(imageList map[string][]TwitchImageMeta) (err error) {
 	var wg sync.WaitGroup
-	wg.Add(20)
+	limit := int(20)
+	wg.Add(limit)
 	fn := func() {
 		wg.Done()
 	}
-	c, res := crawler.spawnWorkers(20, fn)
-
-	var imagesBeingProcessed int = 0
+	c, res := crawler.spawnWorkers(uint(limit), fn)
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			err, ok = r.(error)
+			if !ok {
+				err = fmt.Errorf("pkg: %v", r)
+			}
+		}
+	}()
 	for channelName, imageMetaSlice := range imageList {
 		err := os.MkdirAll(filepath.FromSlash(crawler.WorkFolder+"/"+channelName), 0777)
 		if err != nil {
 			return err
 		}
+
 		for _, imageMeta := range imageMetaSlice {
 			imageLink, err := url.Parse(imageMeta.Images["url"].(string))
 			if err != nil {
@@ -64,20 +79,23 @@ func (crawler *TwitchCrawler) SaveImages(imageList map[string][]TwitchImageMeta)
 			data := DownloadImageData{ImageUrl: imageMeta.Images["url"].(string),
 				Path:      crawler.WorkFolder + "/" + channelName,
 				ImageName: imageMeta.Regex + imageExtension}
-			c <- data
-			imagesBeingProcessed++
+			hasBadSymbols, err := regexp.MatchString(`[^a-zA-Z\d\s:]`, imageMeta.Regex)
+			if !hasBadSymbols {
+				c <- data
+			}
 		}
 	}
-	for ind := imagesBeingProcessed; ind > 0; ind-- {
+	close(c)
+	for ind := limit; ind > 0; ind-- {
 		err := <-res
 		if err != nil {
 			log.Printf("Err from channel:%v", err)
 			return err
 		}
 	}
-	close(c)
+
 	close(res)
-	return nil
+	return err
 }
 
 type TwitchCrawler struct {
@@ -102,7 +120,7 @@ func (crawler *TwitchCrawler) GetImageList() (images map[string][]TwitchImageMet
 		apiUrl := crawler.ApiLink + "/chat/emoticons"
 		req, _ := http.NewRequest("GET", apiUrl, nil)
 		req.Header.Set("Client-ID", crawler.ApiKey)
-		req.Header.Set("Accept", "application/vnd.twitchtv.v5+json")
+		req.Header.Set("Accept", "application/vnd.2twitchtv.v5+json")
 		response, err := client.Do(req)
 		if response.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("Error while getting list %v", response.Status)
@@ -127,8 +145,7 @@ func (crawler *TwitchCrawler) GetImageList() (images map[string][]TwitchImageMet
 	json.Unmarshal(bodyBytes, &f)
 	//NA marshaling
 	for _, imageMeta := range f["emoticons"] {
-
-		log.Printf("Parsing meta:%v", imageMeta)
+		//log.Printf("Parsing meta:%v", imageMeta)
 		converted := imageMeta.(map[string]interface{})
 		meta := TwitchImageMeta{}
 		meta.Regex = converted["regex"].(string)
@@ -139,7 +156,9 @@ func (crawler *TwitchCrawler) GetImageList() (images map[string][]TwitchImageMet
 			if ok {
 				images[name] = append(images[name], meta)
 			}
-		} //TODO: processing of no channel images
+		} else {
+			images["General"] = append(images["General"], meta)
+		}
 	}
 	return images, err
 }
@@ -150,32 +169,28 @@ type DownloadImageData struct {
 	Path      string
 }
 
-func (crawler *TwitchCrawler) DownloadImageFromUrl(data DownloadImageData, ch chan error) {
+func (crawler *TwitchCrawler) DownloadImageFromUrl(data DownloadImageData) error {
 	log.Printf("Attempting to get image %s", data.ImageUrl)
 	response, err := http.Get(data.ImageUrl)
 	defer response.Body.Close()
 	if err != nil {
 		log.Print(err)
-		ch <- err
-		return
+		return err
 	}
 	if response.StatusCode != http.StatusOK {
-		ch <- fmt.Errorf("Error while getting file %v", response.Status)
-		return
+		return fmt.Errorf("Error while getting file %v", response.Status)
 	}
 	file, err := os.Create(filepath.FromSlash(data.Path + "/" + data.ImageName))
 	if err != nil {
 		log.Print(err)
-		ch <- err
-		return
+		return err
 	}
 	_, err = io.Copy(file, response.Body)
 	defer file.Close()
+
 	if err != nil {
 		log.Print(err)
-		ch <- err
-		return
+		return err
 	}
-	ch <- nil
-	return
+	return nil
 }
