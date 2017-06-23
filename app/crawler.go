@@ -121,7 +121,7 @@ func (crawler *TwitchCrawler) GetImageList() (images map[string][]TwitchImageMet
 		apiUrl := crawler.ApiLink + "/chat/emoticons"
 		req, _ := http.NewRequest("GET", apiUrl, nil)
 		req.Header.Set("Client-ID", crawler.ApiKey)
-		req.Header.Set("Accept", "application/vnd.2twitchtv.v5+json")
+		req.Header.Set("Accept", "application/vnd.twitchtv.v5+json")
 		response, err := client.Do(req)
 		if response.StatusCode != http.StatusOK {
 			return nil, fmt.Errorf("Error while getting list %v", response.Status)
